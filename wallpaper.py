@@ -83,8 +83,6 @@ def get_all_files_with_ext(folder, extensions):
 
 
 def format_image(path, text, path_out):
-    margin_x = 0.01
-    margin_y = 0.05
     img = Image.open(path).convert('RGB')
     img.load()
     width, height = img.size
@@ -114,6 +112,8 @@ image_extensions = tuple(config['config']['image_extensions'].split(','))
 root_folder = os.path.abspath(config['config']['root_folder'])
 wait_seconds = float(config['config']['seconds_per_transition'])
 text_size = float(config['config']['text_size'])
+margin_x = float(config['config']['x_margin_percentage'])
+margin_y = float(config['config']['y_margin_percentage'])
 all_images = get_all_files_with_ext(root_folder, image_extensions)
 last_path = None
 temp_background_name = 'tempbackground.jpg'
