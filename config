@@ -1,0 +1,5 @@
+[config]
+root_folder=\\morla\share\Fotos
+seconds_per_transition=3
+image_extensions=png,bpm,jpg,jpeg,bmp
+text_size=14

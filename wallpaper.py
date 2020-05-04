@@ -15,6 +15,8 @@ from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
 
+from configparser import ConfigParser
+
 user32 = ctypes.windll.user32
 
 
@@ -81,16 +83,23 @@ def get_all_files_with_ext(folder, extensions):
 
 
 def format_image(path, text, path_out):
+    margin_x = 0.01
+    margin_y = 0.05
     img = Image.open(path).convert('RGB')
     img.load()
     width, height = img.size
     if width < 100 or height < 100:
         return False
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype("Arial.ttf", int(16*height/400))
+    draw = ImageDraw.Draw(img, 'RGBA')
+    font = ImageFont.truetype("Arial.ttf", int(text_size*height/400))
     text_w, text_h = draw.textsize(text, font)
+    if text_w > width - 2*margin_x*width:
+        font = ImageFont.truetype("Arial.ttf", int(text_size * height / 400 * (width - 2*margin_x*width)/text_w))
+        text_w, text_h = draw.textsize(text, font)
+    text_x, text_y = (width-text_w - width*margin_x, height-text_h - height*margin_y)
     try:
-        draw.text((int(0.97*(width-text_w)), int(0.95*(height-text_h))), text, fill='rgb(255, 255, 255)', font=font)
+        draw.rectangle([(text_x, text_y), (text_x + text_w, text_y + text_h)], fill=(0, 0, 0, 100))
+        draw.text((text_x, text_y), text, fill=(255, 255, 255, 255), font=font)
     except IndexError:
         print('Warning! Could not write text on ' + path)
     img.save(path_out)
@@ -98,25 +107,36 @@ def format_image(path, text, path_out):
 
 
 s = sched.scheduler(time.time, time.sleep)
-image_extensions = ('png', 'bpm', 'jpg', 'jpeg', 'bmp')
-root_folder = os.path.abspath('.')
-wait_seconds = 5
+config = ConfigParser()
+configFilePath = r'config'
+config.read(configFilePath)
+image_extensions = tuple(config['config']['image_extensions'].split(','))
+root_folder = os.path.abspath(config['config']['root_folder'])
+wait_seconds = float(config['config']['seconds_per_transition'])
+text_size = float(config['config']['text_size'])
 all_images = get_all_files_with_ext(root_folder, image_extensions)
 last_path = None
+temp_background_name = 'tempbackground.jpg'
 
 
 def run(sc):
     global last_path
+    id = random.randint(0, 9999999)
+    new_name = str(id) + temp_background_name
     while True:
         path = random.choice(all_images)
-        while path == last_path or path.endswith('temp.jpg'):
+        while path == last_path or path.endswith(temp_background_name):
             path = random.choice(all_images)
         name = os.path.relpath(path, root_folder)
-        if format_image(path, name, 'temp.jpg'):
+        if format_image(path, name, new_name):
             break
     last_path = path
     print("Setting background to", name)
-    set_wallpaper(os.path.abspath('temp.jpg'))
+    set_wallpaper(os.path.abspath(new_name))
+    files = [f for f in os.listdir('.') if os.path.isfile(f)]
+    for f in files:
+        if not f.endswith(new_name) and f.endswith(temp_background_name):
+            os.remove(f)
     s.enter(wait_seconds, 1, run, (sc,))
 
 
