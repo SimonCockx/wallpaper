@@ -4,4 +4,4 @@ seconds_per_transition=3
 image_extensions=png,bpm,jpg,jpeg,bmp
 text_size=14
 x_margin_percentage=0.01
-y_margin_percentage=0.03
+y_margin_percentage=0.05

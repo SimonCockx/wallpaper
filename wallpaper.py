@@ -17,6 +17,8 @@ from PIL import ImageDraw
 
 from configparser import ConfigParser
 
+import logging
+
 user32 = ctypes.windll.user32
 
 
@@ -89,54 +91,67 @@ def format_image(path, text, path_out):
     if width < 100 or height < 100:
         return False
     draw = ImageDraw.Draw(img, 'RGBA')
-    font = ImageFont.truetype("Arial.ttf", int(text_size*height/400))
+    font = ImageFont.truetype(font_path, int(text_size*height/400))
     text_w, text_h = draw.textsize(text, font)
     if text_w > width - 2*margin_x*width:
-        font = ImageFont.truetype("Arial.ttf", int(text_size * height / 400 * (width - 2*margin_x*width)/text_w))
+        font = ImageFont.truetype(font_path, int(text_size * height / 400 * (width - 2*margin_x*width)/text_w))
         text_w, text_h = draw.textsize(text, font)
     text_x, text_y = (width-text_w - width*margin_x, height-text_h - height*margin_y)
     try:
         draw.rectangle([(text_x, text_y), (text_x + text_w, text_y + text_h)], fill=(0, 0, 0, 100))
         draw.text((text_x, text_y), text, fill=(255, 255, 255, 255), font=font)
     except IndexError:
-        print('Warning! Could not write text on ' + path)
+        logging.warning('Warning! Could not write text on %s', path)
     img.save(path_out)
     return True
 
 
-s = sched.scheduler(time.time, time.sleep)
-config = ConfigParser()
-configFilePath = r'config'
-config.read(configFilePath)
-image_extensions = tuple(config['config']['image_extensions'].split(','))
-root_folder = os.path.abspath(config['config']['root_folder'])
-wait_seconds = float(config['config']['seconds_per_transition'])
-text_size = float(config['config']['text_size'])
-margin_x = float(config['config']['x_margin_percentage'])
-margin_y = float(config['config']['y_margin_percentage'])
-all_images = get_all_files_with_ext(root_folder, image_extensions)
-last_path = None
-temp_background_name = 'tempbackground.jpg'
+scriptdir = os.path.dirname(__file__)
+logging.basicConfig(filename=os.path.join(scriptdir, 'wallpapers.log'), format='%(asctime)s %(levelname)s %(message)s',
+                    filemode='w', level=logging.INFO)
+try:
+    scriptdir = os.path.dirname(__file__)
+    s = sched.scheduler(time.time, time.sleep)
+    config = ConfigParser()
+    configFilePath = os.path.join(scriptdir, 'config')
+    config.read(configFilePath)
+    image_extensions = tuple(config['config']['image_extensions'].split(','))
+    root_folder = os.path.abspath(config['config']['root_folder'])
+    wait_seconds = float(config['config']['seconds_per_transition'])
+    text_size = float(config['config']['text_size'])
+    margin_x = float(config['config']['x_margin_percentage'])
+    margin_y = float(config['config']['y_margin_percentage'])
+    all_images = get_all_files_with_ext(root_folder, image_extensions)
+    last_path = None
+    temp_background_name = 'tempbackground.jpg'
+    font_path = os.path.join(scriptdir, 'Arial.ttf')
+except Exception as e:
+    logging.exception(e)
+    raise SystemExit()
 
 
 def run(sc):
-    global last_path
-    id = random.randint(0, 9999999)
-    new_name = str(id) + temp_background_name
-    while True:
-        path = random.choice(all_images)
-        while path == last_path or path.endswith(temp_background_name):
+    try:
+        global last_path
+        id = random.randint(0, 9999999)
+        new_name = str(id) + temp_background_name
+        new_path = os.path.join(scriptdir, new_name)
+        while True:
             path = random.choice(all_images)
-        name = os.path.relpath(path, root_folder)
-        if format_image(path, name, new_name):
-            break
-    last_path = path
-    print("Setting background to", name)
-    set_wallpaper(os.path.abspath(new_name))
-    files = [f for f in os.listdir('.') if os.path.isfile(f)]
-    for f in files:
-        if not f.endswith(new_name) and f.endswith(temp_background_name):
-            os.remove(f)
+            while path == last_path or path.endswith(temp_background_name):
+                path = random.choice(all_images)
+            name = os.path.relpath(path, root_folder)
+            if format_image(path, name, new_path):
+                break
+        last_path = path
+        logging.info("Setting background to %s", name)
+        set_wallpaper(new_path)
+        files = [f for f in os.listdir(scriptdir) if os.path.isfile(os.path.join(scriptdir, f))]
+        for f in files:
+            if not f.endswith(new_name) and f.endswith(temp_background_name):
+                os.remove(os.path.join(scriptdir, f))
+    except Exception as e:
+        logging.exception(e)
     s.enter(wait_seconds, 1, run, (sc,))
 
 

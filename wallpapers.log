@@ -1,0 +1,5 @@
+2020-05-05 21:19:47,142 ERROR division by zero
+Traceback (most recent call last):
+  File "C:\Users\Simon\Desktop\Python-projects\wallpaper\wallpaper.py", line 128, in <module>
+    1/0
+ZeroDivisionError: division by zero
