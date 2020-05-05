@@ -1,5 +1,31 @@
-2020-05-05 21:19:47,142 ERROR division by zero
-Traceback (most recent call last):
-  File "C:\Users\Simon\Desktop\Python-projects\wallpaper\wallpaper.py", line 128, in <module>
-    1/0
-ZeroDivisionError: division by zero
+2020-05-06 00:29:00,261 DEBUG Started
+2020-05-06 00:29:00,264 DEBUG Scanning for images in \\morla\share\Fotos...
+2020-05-06 00:29:00,265 DEBUG Found 0 images
+2020-05-06 00:29:03,274 DEBUG Scanning for images in \\morla\share\Fotos...
+2020-05-06 00:29:03,274 DEBUG Found 0 images
+2020-05-06 00:29:06,275 DEBUG Scanning for images in \\morla\share\Fotos...
+2020-05-06 00:29:06,464 DEBUG Found 0 images
+2020-05-06 00:29:09,692 DEBUG Scanning for images in \\morla\share\Fotos...
+2020-05-06 00:29:09,707 DEBUG Found 0 images
+2020-05-06 00:29:12,710 DEBUG Scanning for images in \\morla\share\Fotos...
+2020-05-06 00:29:13,737 DEBUG Found 0 images
+2020-05-06 00:29:16,763 DEBUG Scanning for images in \\morla\share\Fotos...
+2020-05-06 00:29:24,766 DEBUG Found 17161 images
+2020-05-06 00:29:28,923 INFO Setting background to 2015\2015-07-30 foto's GSM AR\natuurfoto's\IMG_20141107_103547245.jpg
+2020-05-06 00:29:32,676 INFO Setting background to 2016\2016-02 Thailand\2016-02-21\DSC04856.jpg
+2020-05-06 00:29:37,190 INFO Setting background to 2019-04 La Palma bewerkt\DSC06366.jpg
+2020-05-06 00:29:41,090 INFO Setting background to 1900-1989\1961 Fotoboek Annemiek\miekje 38.jpg
+2020-05-06 00:29:44,686 INFO Setting background to 2017\2017-01-01\IMG_20170907_203831158.jpg
+2020-05-06 00:29:48,343 INFO Setting background to 1900-1989\1988 Indonesia\1988 Indonesia 051.jpg
+2020-05-06 00:29:52,492 INFO Setting background to 2017\2017-07 Jesper en Neline in Bretagne\Neline\IMG_20170718_212214668.jpg
+2020-05-06 00:29:56,043 INFO Setting background to 2016\2016-08-11 allerlei\2016-08-11 allerlei\2015-09-25 14.55.33.jpg
+2020-05-06 00:29:59,878 INFO Setting background to 1900-1989\1989 Indonesia\1989 Indonesia 155.jpg
+2020-05-06 00:30:03,663 INFO Setting background to 1900-1989\1989 Indonesia\foto620.jpg
+2020-05-06 00:30:07,616 INFO Setting background to 1990-1999\1995 fotoboek Robbe\foto483 (4).jpg
+2020-05-06 00:30:11,687 INFO Setting background to 2007\2007-04 Malta\malta 155.jpg
+2020-05-06 00:30:16,883 INFO Setting background to 1900-1989\1982 India A\foto922.jpg
+2020-05-06 00:30:20,621 INFO Setting background to 2008\2008-04-03 Disneyland Parijs\DSCN4795.jpg
+2020-05-06 00:30:25,261 INFO Setting background to 2016\2016-02 Jesper op Tenerife\Tenerife Feb 2016 162  - Jonathan Nikon - DSC_3242.jpg
+2020-05-06 00:30:29,086 INFO Setting background to 2015\2015-07-30 foto's GSM AR\2015-05-08 12.44.22.jpg
+2020-05-06 00:30:32,584 INFO Setting background to 2015\2015-07-30 foto's GSM AR\natuurfoto's\IMG_20150328_144501812.jpg
+2020-05-06 00:30:36,514 INFO Setting background to Annemiek 50 jaar\01.jpg

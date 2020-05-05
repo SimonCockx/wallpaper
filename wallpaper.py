@@ -108,7 +108,8 @@ def format_image(path, text, path_out):
 
 scriptdir = os.path.dirname(__file__)
 logging.basicConfig(filename=os.path.join(scriptdir, 'wallpapers.log'), format='%(asctime)s %(levelname)s %(message)s',
-                    filemode='w', level=logging.INFO)
+                    filemode='w', level=logging.DEBUG)
+logging.debug("Started")
 try:
     scriptdir = os.path.dirname(__file__)
     s = sched.scheduler(time.time, time.sleep)
@@ -121,9 +122,12 @@ try:
     text_size = float(config['config']['text_size'])
     margin_x = float(config['config']['x_margin_percentage'])
     margin_y = float(config['config']['y_margin_percentage'])
+    logging.debug("Scanning for images in %s...", root_folder)
     all_images = get_all_files_with_ext(root_folder, image_extensions)
+    logging.debug("Found %d images", len(all_images))
     last_path = None
     temp_background_name = 'tempbackground.jpg'
+    temp_background_path = os.path.join(scriptdir, temp_background_name)
     font_path = os.path.join(scriptdir, 'Arial.ttf')
 except Exception as e:
     logging.exception(e)
@@ -132,24 +136,23 @@ except Exception as e:
 
 def run(sc):
     try:
-        global last_path
-        id = random.randint(0, 9999999)
-        new_name = str(id) + temp_background_name
-        new_path = os.path.join(scriptdir, new_name)
-        while True:
-            path = random.choice(all_images)
-            while path == last_path or path.endswith(temp_background_name):
+        global all_images
+        if len(all_images) == 0:
+            logging.debug("Scanning for images in %s...", root_folder)
+            all_images = get_all_files_with_ext(root_folder, image_extensions)
+            logging.debug("Found %d images", len(all_images))
+        else:
+            global last_path
+            while True:
                 path = random.choice(all_images)
-            name = os.path.relpath(path, root_folder)
-            if format_image(path, name, new_path):
-                break
-        last_path = path
-        logging.info("Setting background to %s", name)
-        set_wallpaper(new_path)
-        files = [f for f in os.listdir(scriptdir) if os.path.isfile(os.path.join(scriptdir, f))]
-        for f in files:
-            if not f.endswith(new_name) and f.endswith(temp_background_name):
-                os.remove(os.path.join(scriptdir, f))
+                while path == last_path or path.endswith(temp_background_name):
+                    path = random.choice(all_images)
+                name = os.path.relpath(path, root_folder)
+                if format_image(path, name, temp_background_path):
+                    break
+            last_path = path
+            logging.info("Setting background to %s", name)
+            set_wallpaper(os.path.abspath(temp_background_path))
     except Exception as e:
         logging.exception(e)
     s.enter(wait_seconds, 1, run, (sc,))
