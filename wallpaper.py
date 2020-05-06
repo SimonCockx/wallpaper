@@ -1,5 +1,6 @@
 import ctypes
 import random
+import stat
 from typing import List
 
 import pythoncom
@@ -106,41 +107,49 @@ def format_image(path, text, path_out):
     return True
 
 
-scriptdir = os.path.dirname(__file__)
-logging.basicConfig(filename=os.path.join(scriptdir, 'wallpapers.log'), format='%(asctime)s %(levelname)s %(message)s',
-                    filemode='w', level=logging.DEBUG)
-logging.debug("Started")
-try:
-    scriptdir = os.path.dirname(__file__)
-    s = sched.scheduler(time.time, time.sleep)
-    config = ConfigParser()
-    configFilePath = os.path.join(scriptdir, 'config')
-    config.read(configFilePath)
-    image_extensions = tuple(config['config']['image_extensions'].split(','))
-    root_folder = os.path.abspath(config['config']['root_folder'])
-    wait_seconds = float(config['config']['seconds_per_transition'])
-    text_size = float(config['config']['text_size'])
-    margin_x = float(config['config']['x_margin_percentage'])
-    margin_y = float(config['config']['y_margin_percentage'])
-    logging.debug("Scanning for images in %s...", root_folder)
+image_extensions = None
+root_folder = None
+wait_seconds = None
+text_size = None
+margin_x = None
+margin_y = None
+last_modified = None
+all_images = []
+
+
+def load_config():
+    global last_modified
+    modification_time = time.ctime(os.stat(configFilePath)[stat.ST_MTIME])
+    if last_modified != modification_time:
+        last_modified = modification_time
+        logging.info("Reading config")
+        config = ConfigParser()
+        config.read(configFilePath)
+        global image_extensions, root_folder, wait_seconds, text_size, margin_x, margin_y
+        last_root_folder = root_folder
+        last_image_extensions = image_extensions
+        image_extensions = tuple(config['config']['image_extensions'].split(','))
+        root_folder = os.path.abspath(config['config']['root_folder'])
+        wait_seconds = float(config['config']['seconds_per_transition'])
+        text_size = float(config['config']['text_size'])
+        margin_x = float(config['config']['x_margin_percentage'])
+        margin_y = float(config['config']['y_margin_percentage'])
+        if last_root_folder != root_folder or last_image_extensions != image_extensions:
+            scan_images()
+
+
+def scan_images():
+    global all_images
+    logging.info("Scanning for images in %s...", root_folder)
     all_images = get_all_files_with_ext(root_folder, image_extensions)
-    logging.debug("Found %d images", len(all_images))
-    last_path = None
-    temp_background_name = 'tempbackground.jpg'
-    temp_background_path = os.path.join(scriptdir, temp_background_name)
-    font_path = os.path.join(scriptdir, 'Arial.ttf')
-except Exception as e:
-    logging.exception(e)
-    raise SystemExit()
+    logging.info("Found %d images", len(all_images))
 
 
 def run(sc):
     try:
-        global all_images
+        load_config()
         if len(all_images) == 0:
-            logging.debug("Scanning for images in %s...", root_folder)
-            all_images = get_all_files_with_ext(root_folder, image_extensions)
-            logging.debug("Found %d images", len(all_images))
+            scan_images()
         else:
             global last_path
             while True:
@@ -158,5 +167,22 @@ def run(sc):
     s.enter(wait_seconds, 1, run, (sc,))
 
 
-s.enter(wait_seconds, 1, run, (s,))
-s.run()
+scriptdir = os.path.dirname(__file__)
+logging.basicConfig(filename=os.path.join(scriptdir, 'wallpapers.log'), format='%(asctime)s %(levelname)s %(message)s',
+                    filemode='w', level=logging.DEBUG)
+logging.debug("Started")
+try:
+    scriptdir = os.path.dirname(__file__)
+    s = sched.scheduler(time.time, time.sleep)
+    configFilePath = os.path.join(scriptdir, 'config')
+    load_config()
+    last_path = None
+    temp_background_name = 'tempbackground.jpg'
+    temp_background_path = os.path.join(scriptdir, temp_background_name)
+    font_path = os.path.join(scriptdir, 'Arial.ttf')
+    s.enter(wait_seconds, 1, run, (s,))
+    s.run()
+except Exception as e:
+    logging.exception(e)
+    logging.info('Exiting...')
+    raise SystemExit()
