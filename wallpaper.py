@@ -3,11 +3,6 @@ import random
 import stat
 from typing import List
 
-import pythoncom
-import pywintypes
-import win32gui
-from win32com.shell import shell, shellcon
-
 import os
 import sched
 import time
@@ -20,72 +15,24 @@ from configparser import ConfigParser
 
 import logging
 
-user32 = ctypes.windll.user32
+import os
+
+import pathlib
 
 
-def _make_filter(class_name: str, title: str):
-    """https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumwindows"""
-
-    def enum_windows(handle: int, h_list: list):
-        if not (class_name or title):
-            h_list.append(handle)
-        if class_name and class_name not in win32gui.GetClassName(handle):
-            return True  # continue enumeration
-        if title and title not in win32gui.GetWindowText(handle):
-            return True  # continue enumeration
-        h_list.append(handle)
-
-    return enum_windows
+def set_wallpaper(image_path: str) -> None:
+    os.system(f'gsettings set org.cinnamon.desktop.background picture-uri {pathlib.Path(image_path).as_uri()}')
+    
 
 
-def find_window_handles(parent: int = None, window_class: str = None, title: str = None) -> List[int]:
-    cb = _make_filter(window_class, title)
-    try:
-        handle_list = []
-        if parent:
-            win32gui.EnumChildWindows(parent, cb, handle_list)
-        else:
-            win32gui.EnumWindows(cb, handle_list)
-        return handle_list
-    except pywintypes.error:
-        return []
-
-
-def force_refresh():
-    user32.UpdatePerUserSystemParameters(1)
-
-
-def enable_activedesktop():
-    """https://stackoverflow.com/a/16351170"""
-    try:
-        progman = find_window_handles(window_class='Progman')[0]
-        cryptic_params = (0x52c, 0, 0, 0, 500, None)
-        user32.SendMessageTimeoutW(progman, *cryptic_params)
-    except IndexError as e:
-        raise WindowsError('Cannot enable Active Desktop') from e
-
-
-def set_wallpaper(image_path, use_activedesktop = True):
-    if use_activedesktop:
-        enable_activedesktop()
-    pythoncom.CoInitialize()
-    iad = pythoncom.CoCreateInstance(shell.CLSID_ActiveDesktop,
-                                     None,
-                                     pythoncom.CLSCTX_INPROC_SERVER,
-                                     shell.IID_IActiveDesktop)
-    iad.SetWallpaper(str(image_path), 0)
-    iad.ApplyChanges(shellcon.AD_APPLY_ALL)
-    force_refresh()
-
-
-def get_all_files_with_ext(folder, extensions):
+def get_all_files_with_ext(folder: str, extensions):
     return [os.path.join(path, filename)
             for path, dirs, files in os.walk(folder)
             for filename in files
             if filename.endswith(extensions)]
 
 
-def format_image(path, text, path_out):
+def format_image(path: str, text: str, path_out: str) -> bool:
     img = Image.open(path).convert('RGB')
     img.load()
     width, height = img.size
