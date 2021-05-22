@@ -15,9 +15,9 @@ logging.basicConfig(filename=os.path.join(projectdir, 'wallpapers.log'), format=
                     filemode='w', level=logging.INFO)
 
 
-from src.handler.manager import WallpaperManager  # noqa: E402
-from src.timer.timer import WallpaperTimer  # noqa: E402
-from src.widget.widget import WallpaperWidget  # noqa: E402
+from handler.manager import WallpaperManager  # noqa: E402
+from timer.timer import WallpaperTimer  # noqa: E402
+from widget.widget import WallpaperWidget  # noqa: E402
 
 
 manager = WallpaperManager(

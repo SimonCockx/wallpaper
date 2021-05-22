@@ -4,7 +4,7 @@ from configparser import Error as ConfigParserError
 from enum import Enum, unique, auto
 from typing import Any
 
-from src.handler.imagesource import DirectorySource
+from handler.imagesource import DirectorySource
 
 
 @unique

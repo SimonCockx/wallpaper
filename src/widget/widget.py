@@ -5,9 +5,9 @@ from PySide6.QtCore import QSize
 from PySide6.QtGui import QColor, Qt, QIcon, QPixmap, QScreen
 from PySide6.QtWidgets import QApplication
 
-from src.handler.configmanager import ConfigField
-from src.handler.manager import WallpaperManager, WallpaperObserver
-from src.timer.timer import WallpaperTimer
+from handler.configmanager import ConfigField
+from handler.manager import WallpaperManager, WallpaperObserver
+from timer.timer import WallpaperTimer
 
 
 class WallpaperWidget(WallpaperObserver, QtWidgets.QWidget):

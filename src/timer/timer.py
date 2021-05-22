@@ -2,8 +2,8 @@ import time
 from threading import Timer
 from typing import Any
 
-from ..handler.configmanager import ConfigField
-from ..handler.manager import WallpaperManager, WallpaperObserver, FileId
+from handler.configmanager import ConfigField
+from handler.manager import WallpaperManager, WallpaperObserver, FileId
 
 
 class WallpaperTimer(WallpaperObserver):
