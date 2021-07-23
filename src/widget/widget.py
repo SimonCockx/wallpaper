@@ -167,7 +167,7 @@ class WallpaperWidget(WallpaperObserver, QtWidgets.QWidget):
         if msg_box.exec() == QMessageBox.Ok:
             self.manager.delete_current()
         if is_running:
-            self.timer.play()
+            self.timer.resume()
 
     @QtCore.Slot()
     def _handle_open_explorer(self):
