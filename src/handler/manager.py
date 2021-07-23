@@ -48,6 +48,14 @@ class WallpaperManager(PatternMatchingEventHandler):
         self._scanned_files: list[FileId] = []
         self._observers: list[WallpaperObserver] = []
 
+    @property
+    def current_source(self) -> ImageSource:
+        return self._history[self._current_index][0]
+
+    @property
+    def current_path(self) -> str:
+        return self._history[self._current_index][1]
+
     def subscribe(self, observer: WallpaperObserver) -> None:
         self._observers.append(observer)
 
@@ -101,6 +109,14 @@ class WallpaperManager(PatternMatchingEventHandler):
     def open_config(self) -> None:
         platform.open_file(self._config_path)
 
+    def delete_current(self) -> None:
+        source, path = file_id = self._history[self._current_index]
+        source.delete_image(path)
+        self._scanned_files.remove(file_id)
+        del self._history[self._current_index]
+        self._current_index -= 1
+        self.next()
+
     def get_config(self, field: ConfigField) -> Any:
         return self._config.get_value(field)
 
@@ -135,6 +151,7 @@ class WallpaperManager(PatternMatchingEventHandler):
             raise ConfigError('Invalid configuration: no image sources provided')
         if ConfigField.SOURCES in changed:
             self.invalidate_history_and_scan_sources()
+            self.next()
         for observer in self._observers:
             for change in changed:
                 observer.on_config_change(change, self._config.get_value(change))

@@ -2,8 +2,8 @@ from typing import Any
 
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtCore import QSize
-from PySide6.QtGui import QColor, Qt, QIcon, QPixmap, QScreen
-from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QColor, Qt, QIcon, QScreen
+from PySide6.QtWidgets import QApplication, QMessageBox, QDialog
 
 from handler.configmanager import ConfigField
 from handler.manager import WallpaperManager, WallpaperObserver
@@ -21,6 +21,7 @@ class WallpaperWidget(WallpaperObserver, QtWidgets.QWidget):
                  next_icon: str,
                  turn_left_icon: str,
                  turn_right_icon: str,
+                 delete_icon: str,
                  explorer_icon: str,
                  config_icon: str,
                  tools_icon: str,
@@ -44,6 +45,7 @@ class WallpaperWidget(WallpaperObserver, QtWidgets.QWidget):
         self.next = self._create_button(self._create_icon(next_icon))
         self.turn_left = self._create_button(self._create_icon(turn_left_icon))
         self.turn_right = self._create_button(self._create_icon(turn_right_icon))
+        self.delete = self._create_button(self._create_icon(delete_icon))
         self.open_explorer = self._create_button(self._create_icon(explorer_icon))
         self.open_config = self._create_button(self._create_icon(config_icon))
         self.tools = self._create_button(self._create_icon(tools_icon))
@@ -51,7 +53,7 @@ class WallpaperWidget(WallpaperObserver, QtWidgets.QWidget):
         self.tools.setChecked(not initially_expanded)
 
         self.action_buttons = [self.previous, self.play_or_pause, self.next, self.turn_left, self.turn_right,
-                               self.open_explorer, self.open_config]
+                               self.delete, self.open_explorer, self.open_config]
 
         self.hlayout = QtWidgets.QHBoxLayout(self)
         self.layout().setContentsMargins(5, 5, 5, 5)
@@ -65,6 +67,7 @@ class WallpaperWidget(WallpaperObserver, QtWidgets.QWidget):
         self.next.clicked.connect(self._handle_next)
         self.turn_left.clicked.connect(self._handle_turn_left)
         self.turn_right.clicked.connect(self._handle_turn_right)
+        self.delete.clicked.connect(self._handle_delete)
         self.open_explorer.clicked.connect(self._handle_open_explorer)
         self.open_config.clicked.connect(self._handle_open_config)
         self.tools.clicked.connect(self._handle_tool_toggle)
@@ -148,6 +151,23 @@ class WallpaperWidget(WallpaperObserver, QtWidgets.QWidget):
     @QtCore.Slot()
     def _handle_turn_right(self):
         self.manager.rotate_current_right()
+
+    @QtCore.Slot()
+    def _handle_delete(self):
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("Delete wallpaper")
+        msg_box.setText(
+            f"Are you sure you want to delete {self.manager.current_source.get_label(self.manager.current_path)}?")
+        msg_box.setInformativeText("This action cannot be undone.")
+        msg_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        msg_box.setDefaultButton(QMessageBox.Ok)
+        is_running = self.timer.is_running
+        if is_running:
+            self.timer.pause()
+        if msg_box.exec() == QMessageBox.Ok:
+            self.manager.delete_current()
+        if is_running:
+            self.timer.play()
 
     @QtCore.Slot()
     def _handle_open_explorer(self):

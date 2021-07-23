@@ -36,6 +36,10 @@ class ImageSource(ABC):
         pass
 
     @abstractmethod
+    def delete_image(self, path: str) -> None:
+        pass
+
+    @abstractmethod
     def show_source(self, path: str) -> None:
         pass
 
@@ -65,6 +69,9 @@ class DirectorySource(ImageSource):
 
     def write_image(self, path: str, img: Image.Image) -> None:
         img.save(path)
+
+    def delete_image(self, path: str) -> None:
+        os.remove(path)
 
     def show_source(self, path: str) -> None:
         platform.open_file_in_explorer(path)

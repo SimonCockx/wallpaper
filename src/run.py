@@ -31,6 +31,7 @@ manager.start()
 timer.start()
 
 app = QtWidgets.QApplication([])
+app.setQuitOnLastWindowClosed(False)
 # Force the style to be the same on all OSs:
 app.setStyle("Fusion")
 
@@ -57,6 +58,7 @@ widget = WallpaperWidget(manager, timer,
                          os.path.join(iconsdir, 'next.svg'),
                          os.path.join(iconsdir, 'turn_left.svg'),
                          os.path.join(iconsdir, 'turn_right.svg'),
+                         os.path.join(iconsdir, 'delete.svg'),
                          os.path.join(iconsdir, 'explorer.svg'),
                          os.path.join(iconsdir, 'config.svg'),
                          os.path.join(iconsdir, 'tools.svg'),
