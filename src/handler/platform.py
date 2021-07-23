@@ -24,22 +24,65 @@ class Platform(ABC):
 
 platform: Platform
 
-
 pname = plat.system()
 logging.info(f'Detected platform: {pname}')
 if pname == 'Windows':
     import os
     import subprocess
     import ctypes
+    from ctypes import wintypes
+    from collections import namedtuple
     import pythoncom
     import pywintypes
     import win32gui
     from win32com.shell import shell, shellcon
     from typing import Callable
 
+    # Setup user32: taken from https://stackoverflow.com/a/37503441/3083982
+    user32 = ctypes.WinDLL('user32', use_last_error=True)
+
+
+    def check_zero(result, func, args):
+        if not result:
+            err = ctypes.get_last_error()
+            if err:
+                raise ctypes.WinError(err)
+        return args
+
+
+    WindowInfo = namedtuple('WindowInfo', 'pid title')
+
+    WNDENUMPROC = ctypes.WINFUNCTYPE(
+        wintypes.BOOL,
+        wintypes.HWND,  # _In_ hWnd
+        wintypes.LPARAM, )  # _In_ lParam
+
+    user32.EnumWindows.errcheck = check_zero
+    user32.EnumWindows.argtypes = (
+        WNDENUMPROC,  # _In_ lpEnumFunc
+        wintypes.LPARAM,)  # _In_ lParam
+
+    user32.IsWindowVisible.argtypes = (
+        wintypes.HWND,)  # _In_ hWnd
+
+    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+    user32.GetWindowThreadProcessId.argtypes = (
+        wintypes.HWND,  # _In_      hWnd
+        wintypes.LPDWORD,)  # _Out_opt_ lpdwProcessId
+
+    user32.GetWindowTextLengthW.errcheck = check_zero
+    user32.GetWindowTextLengthW.argtypes = (
+        wintypes.HWND,)  # _In_ hWnd
+
+    user32.GetWindowTextW.errcheck = check_zero
+    user32.GetWindowTextW.argtypes = (
+        wintypes.HWND,  # _In_  hWnd
+        wintypes.LPWSTR,  # _Out_ lpString
+        ctypes.c_int,)  # _In_  nMaxCount
+
+    # Continue
     FILEBROWSER_PATH = os.path.join(os.getenv('WINDIR'), 'explorer.exe')
 
-    user32 = ctypes.windll.user32
 
     def _make_filter(class_name: str, title: str) -> Callable[[int, list[int]], bool]:
         """https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumwindows"""
@@ -82,6 +125,15 @@ if pname == 'Windows':
         except IndexError as e:
             raise WindowsError('Cannot enable Active Desktop') from e
 
+
+    _enable_activedesktop()
+    pythoncom.CoInitialize()
+    iad = pythoncom.CoCreateInstance(shell.CLSID_ActiveDesktop,
+                                     None,
+                                     pythoncom.CLSCTX_INPROC_SERVER,
+                                     shell.IID_IActiveDesktop)
+
+
     class Windows(Platform):
         name = 'Windows'
 
@@ -93,17 +145,11 @@ if pname == 'Windows':
             path = os.path.normpath(path)
             os.startfile(path)
 
-        def set_wallpaper(self, image_path: str, use_activedesktop: bool = True) -> None:
-            if use_activedesktop:
-                _enable_activedesktop()
-            pythoncom.CoInitialize()
-            iad = pythoncom.CoCreateInstance(shell.CLSID_ActiveDesktop,
-                                             None,
-                                             pythoncom.CLSCTX_INPROC_SERVER,
-                                             shell.IID_IActiveDesktop)
+        def set_wallpaper(self, image_path: str) -> None:
             iad.SetWallpaper(image_path, 0)
             iad.ApplyChanges(shellcon.AD_APPLY_ALL)
             _force_refresh()
+
 
     platform = Windows()
 
@@ -112,6 +158,7 @@ elif pname == 'Linux':
     import subprocess
     import pathlib
     import re
+
 
     def _is_running(process):
         # From http://www.bloggerpolis.com/2011/05/how-to-check-if-a-process-is-running-using-python/
@@ -124,6 +171,7 @@ elif pname == 'Linux':
             if re.search(process, x):
                 return True
         return False
+
 
     # Detect the desktop session in use: https://stackoverflow.com/a/21213358/3083982
     desktop_session = os.environ.get("DESKTOP_SESSION")
@@ -163,6 +211,18 @@ elif pname == 'Linux':
         logging.error(f"Unsupported desktop: {desktop_session}")
         raise SystemExit()
 
+    # partially taken from https://stackoverflow.com/a/21213504/3083982
+    if desktop_session == 'cinnamon':
+        wallpaper_command = ['gsettings', 'set', 'org.cinnamon.desktop.background', 'picture-uri']
+    elif desktop_session in ['gnome', 'unity']:
+        wallpaper_command = ['gsettings', 'set', 'org.gnome.desktop.background', 'picture-uri']
+    elif desktop_session == 'mate':
+        wallpaper_command = ["gsettings", "set", "org.mate.background", "picture-filename"]
+    elif desktop_session == 'gnome2':
+        wallpaper_command = ["gconftool-2", "-t", "string", "--set", "/desktop/gnome/background/picture_filename",
+                             "picture-filename"]
+
+
     class Linux(Platform):
         name = 'Linux'
 
@@ -176,16 +236,8 @@ elif pname == 'Linux':
 
         def set_wallpaper(self, image_path: str) -> None:
             p = pathlib.Path(image_path).as_uri()
-            # partially taken from https://stackoverflow.com/a/21213504/3083982
-            if desktop_session == 'cinnamon':
-                subprocess.run(['gsettings', 'set', 'org.cinnamon.desktop.background', 'picture-uri', p], check=True)
-            elif desktop_session in ['gnome', 'unity']:
-                subprocess.run(['gsettings', 'set', 'org.gnome.desktop.background', 'picture-uri', p], check=True)
-            elif desktop_session == 'mate':
-                subprocess.run(["gsettings", "set", "org.mate.background", "picture-filename", p], check=True)
-            elif desktop_session == 'gnome2':
-                subprocess.run(["gconftool-2", "-t", "string", "--set", "/desktop/gnome/background/picture_filename",
-                                "picture-filename", p], check=True)
+            subprocess.run(wallpaper_command + [p], check=True)
+
 
     platform = Linux()
 
